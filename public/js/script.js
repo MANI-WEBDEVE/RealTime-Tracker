@@ -1,8 +1,12 @@
-
-
-console.log("hello");
+console.log(
+  navigator.geolocation.watchPosition((position) => {
+    let { latitude, longitude } = position.coords;
+    console.log(latitude, longitude);
+  })
+);
 
 let socket = io();
+console.log("hello");
 
 if (navigator.geolocation) {
   navigator.geolocation.watchPosition(
@@ -14,36 +18,46 @@ if (navigator.geolocation) {
       console.error(error);
     },
     {
-        enableHighAccuracy:true,
-        timeout: 10000,
-        maximumAge: 0
+      enableHighAccuracy: true,
+      timeout: 1000,
+      maximumAge: 0,
     }
   );
 } else {
   console.log(`some want wrong `);
 }
 
-const map = L.map('map').setView([0 , 0], 20)
+const map = L.map("map").setView([0, 0], 10);
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "OpenStreetMap"
-}).addTo(map)
+L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
+  
+//https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+  //https://tile.openstreetmap.org/{z}/{x}/{y}.png
+  attribution: "OpenStreetMap",
+}).addTo(map);
 
-const marker = {}
+let myIcon = L.icon({
+  iconUrl: "./img/loca.png",
+  iconSize: [48, 48],
+  iconAnchor: [24, 48], // Center bottom of the icon
+  popupAnchor: [0, -48], // Center top of the icon for the popup
+});
 
-socket.on('recieve-location', function(data){
-    const {id, latitude, longitude} = data
-    map.setView([latitude, longitude],15)
-    if(marker[id]){
-        marker[id].setLatLng([latitude, longitude])
-    } else {
-        marker[id] = L.marker([latitude, longitude]).addTo(map)
-    }
-})
+const marker = {};
 
-socket.on('user-disconnect', function(id) {
-     if(marker[id]){
-        map.removeLayer(marker[id]);
-        delete marker[id]
-     }
-})
+socket.on("recieve-location", function (data) {
+  const { id, latitude, longitude } = data;
+  map.setView([latitude, longitude], 10);
+  if (marker[id]) {
+    marker[id].setLatLng([latitude, longitude]);
+  } else {
+    marker[id] = L.marker([latitude, longitude], { icon: myIcon }).addTo(map);
+  }
+});
+
+socket.on("user-disconnect", function (id) {
+  if (marker[id]) {
+    map.removeLayer(marker[id]);
+    delete marker[id];
+  }
+});
